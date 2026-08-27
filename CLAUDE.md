@@ -30,6 +30,11 @@ Offline-first invoice generator for German freelancers / Kleinunternehmer. **Tau
 - `validator.rs` — E-Rechnungs-Validierung über den gebundelten KoSIT-Validator (**Java**). Extrahiert via Sidecar (`extract_xml_only`) erst die XML aus dem PDF, schreibt sie in eine Temp-Datei und startet Java als CLI-Subprozess (`Command::new(java) -jar validator.jar -s scenarios.xml -r <dir> -o <tmp> <input>`), parst dann den XML-Report (String-Scan: `valid`, Szenario, `failed-assert`-Findings). `resolve_java`: dev `tools/jre/bin/java` → Release `jre/bin/java` aus Resources → System-`java`. Commands: `validator_status`, `validate_einvoice_xml`, `validate_einvoice_pdf`. Nur Release-Build (bzw. dev mit lokalem `tools/jre` + `tools/kosit-validator`). Frontend-Bridge `src/lib/validator.ts`, UI `src/routes/Validate.svelte`. Setup-Skripte: `tools/download-validator.sh` (lädt `validator.jar` + Scenarios), `tools/build-jre.sh` (jlink-minimierte JRE, ~35 MB). Gebundelt via `tauri.bundle.conf.json` (`kosit-validator`, `jre`).
 - `accent.rs` — Accent-Color-Reader (Windows-Registry).
 
+### CLI (`cli/zettel.py`)
+- Headless-DB-Steuerung (stdlib-only) für Automatisierung; Befehle: `status`, `customers`, `invoices`, `invoice:{create,show,issue,pdf,paid}`, `stats`.
+- Repliziert App-Logik aus `invoices.ts` (DRAFT-Placeholder, lazy Numbering, Per-Line-Rundung, Payment-Protokoll, PDF-Versionierung, Sidecar-RPC). **Bei Logik-Änderungen beide Stellen anfassen.**
+- Details: `cli/README.md`.
+
 ### Sidecar (`sidecar/`)
 - `main.py` — JSON-RPC-Loop über stdin/stdout. `_add_gtk_dll_path` lookup: frozen → exe-dir → `C:\Program Files\GTK3-Runtime Win64\` → msys64. Override via `ZETTEL_GTK_PATH`.
 - `invoice/pdf.py` — WeasyPrint, rendert Rechnung/Angebot/Mahnung mit drei Themes (classic/modern/minimal) aus **einer** `invoice.html.j2` via CSS-Variablen. Angebot ist PDF/A-3b ohne XML; Rechnung ist PDF/A-3 mit eingebettetem ZUGFeRD-XML via `factur-x.generate_from_binary(level=...)`.
