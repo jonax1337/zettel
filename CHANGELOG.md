@@ -6,6 +6,14 @@ Versionen folgen [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+## [0.19.0]
+
+### Added
+- **Zettel CLI (`cli/zettel.py`).** Headless-Steuerung der Zettel-Datenbank für Automatisierung — Rechnungen anlegen, bereitstellen, als bezahlt markieren, PDFs generieren, Kennzahlen abrufen. Nur Python-stdlib, nutzt denselben Sidecar (JSON-RPC) wie die App und folgt derselben DB-Auswahl (Sandbox > aktiver Tenant > Standard). Repliziert die App-Geschäftslogik exakt: DRAFT-Placeholder, lazy Rechnungsnummern, Per-Line-Rundung (Cent-Integer), Payment-Protokoll, PDF-Versionierung vor Überschreiben. Details: `cli/README.md`.
+
+### Migration
+- **Keine DB-Migration** — Schema bleibt auf `user_version = 26`.
+
 ## [0.18.4]
 
 ### Changed
