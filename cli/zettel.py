@@ -170,8 +170,20 @@ def fmt_date(unix) -> str:
 # ----------------------------------------------------------------------------
 
 
+SIDECAR_SEARCH_PATHS = [
+    # installierte App (NSIS user-scope) — der Normalfall
+    Path.home() / "AppData" / "Local" / "Zettel" / "sidecar" / "zettel-sidecar.exe",
+    Path.home() / "AppData" / "Local" / "Programs" / "Zettel" / "sidecar" / "zettel-sidecar.exe",
+    Path.home() / "AppData" / "Local" / "zettel" / "sidecar" / "zettel-sidecar.exe",
+    # Dev-Repo-Venv (Fallback)
+    Path(__file__).resolve().parent.parent / "sidecar" / ".venv" / "Scripts" / "python.exe",
+    Path(__file__).resolve().parent.parent / "sidecar" / ".venv" / "bin" / "python",
+]
+
+
 def resolve_sidecar() -> tuple[str | None, str | None]:
-    """(python_exe, main.py) für Dev oder (exe, None) für Release-Binary."""
+    """(exe, None) für ein Standalone-Binary (bevorzugt: installierte App)
+    oder (python, main.py) für das Dev-Venv im Repo."""
     env = os.environ.get("ZETTEL_SIDECAR")
     if env:
         p = Path(env)
@@ -181,17 +193,14 @@ def resolve_sidecar() -> tuple[str | None, str | None]:
             return str(p), str(_find_main_py())
     repo_root = Path(__file__).resolve().parent.parent
     main_py = repo_root / "sidecar" / "main.py"
-    for venv_py in (
-        repo_root / "sidecar" / ".venv" / "Scripts" / "python.exe",
-        repo_root / "sidecar" / ".venv" / "bin" / "python",
-    ):
-        if venv_py.is_file() and main_py.is_file():
-            return str(venv_py), str(main_py)
-    for bundled in (
-        Path.home() / "AppData" / "Local" / "Zettel" / "sidecar" / "zettel-sidecar.exe",
-    ):
-        if bundled.is_file():
-            return str(bundled), None
+    for cand in SIDECAR_SEARCH_PATHS:
+        if not cand.is_file():
+            continue
+        if cand.suffix.lower() == ".exe":
+            return str(cand), None
+        # Dev-Venv braucht main.py daneben
+        if main_py.is_file():
+            return str(cand), str(main_py)
     return None, None
 
 
@@ -452,13 +461,22 @@ def archive_pdf_version(path: Path) -> str | None:
     return str(dest)
 
 
+def pdf_output_dir() -> Path:
+    """PDF-Zielordner. In der Sandbox wird bewusst getrennt:
+    ~/Documents/Zettel-Sandbox/Rechnungen — Sandbox-PDFs dürfen produktive
+    PDFs nie überschreiben (Nummernkreise sind pro DB unabhängig!)."""
+    if resolve_db_path().name == "zettel-sandbox.db":
+        return Path.home() / "Documents" / "Zettel-Sandbox" / "Rechnungen"
+    return Path.home() / "Documents" / "Zettel" / "Rechnungen"
+
+
 def generate_pdf_for(con, invoice_id: int) -> tuple[str, str]:
     inv, items, cust = load_invoice_full(con, invoice_id)
     if inv["status"] == "draft" and is_draft_number(inv["number"]):
         issue_invoice(con, invoice_id)
         inv, items, cust = load_invoice_full(con, invoice_id)
     settings = dict(con.execute("SELECT * FROM settings WHERE id = 1").fetchone())
-    out_dir = Path.home() / "Documents" / "Zettel" / "Rechnungen"
+    out_dir = pdf_output_dir()
     out_dir.mkdir(parents=True, exist_ok=True)
     output_path = out_dir / f"{safe_filename(inv['number'])}.pdf"
     archive_pdf_version(output_path)
