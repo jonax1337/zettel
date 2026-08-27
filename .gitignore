@@ -44,3 +44,6 @@ test-output*.pdf
 tools/kosit-validator/
 # jlink-minimized JRE (built via tools/build-jre.sh, ~56 MB)
 tools/jre/
+
+# local-only pnpm config (repo is NOT a workspace)
+pnpm-workspace.yaml
