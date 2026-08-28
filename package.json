@@ -1,6 +1,6 @@
 {
   "name": "zettel",
-  "version": "0.19.0",
+  "version": "0.19.1",
   "description": "Offline-first invoice generator with ZUGFeRD/Factur-X support",
   "type": "module",
   "scripts": {

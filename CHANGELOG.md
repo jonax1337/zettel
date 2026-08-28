@@ -6,6 +6,17 @@ Versionen folgen [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+## [0.19.1]
+
+> **Hotfix.** Windows-Updates ersetzten den Sidecar (PDF-Generator), die JRE und den KoSIT-Validator nicht zuverlässig — installierte Builds konnten monatelang auf veralteten, gebündelten Ressourcen hängen bleiben, während `zettel.exe` selbst korrekt aktualisiert wurde.
+
+### Fixed
+- **NSIS-Update überschrieb `sidecar/`, `jre/`, `kosit-validator/` nicht zuverlässig.** Diese Ressourcen-Ordner enthalten unversionierte Dateien (PyInstaller-Exe + DLLs, rohe JRE-/Validator-Assets ohne Windows-Versionsinfo) — NSIS' Standard-`SetOverwrite`-Heuristik überspringt solche Dateien beim Update teils komplett (bekannter Tauri-Bug, siehe tauri-apps/tauri#15134). Ergebnis: Nutzer erhielten stillschweigend Rechnungs-PDFs mit fehlendem Leistungszeitraum, fehlenden Positions-Langbeschreibungen und fehlendem EPC-QR-Code, weil ihr Sidecar de facto auf dem Stand der Erstinstallation eingefroren war — teils Monate alt, unabhängig von der angezeigten App-Version. Fix: Neuer NSIS-Preinstall-Hook (`src-tauri/installer-hooks.nsh`) killt einen eventuell noch laufenden `zettel-sidecar.exe`-Prozess und löscht `sidecar/`, `jre/`, `kosit-validator/` vollständig, bevor der Installer die frischen Versionen kopiert — garantiert byte-identischen Zustand bei jedem Install/Update statt NSIS' Heuristik zu vertrauen.
+
+### Migration
+- **Keine DB-Migration** — Schema bleibt auf `user_version = 26`.
+- **Bereits installierte Versionen:** Dieses Update repariert sich beim nächsten Auto-Update selbst (der neue Hook läuft dann erstmals). Wer sofort sichergehen will, dass PDFs korrekt sind: App neu installieren (Deinstallieren + `Zettel_0.19.1_x64-setup.exe` frisch ausführen) statt auf den Auto-Updater zu warten.
+
 ## [0.19.0]
 
 ### Added
